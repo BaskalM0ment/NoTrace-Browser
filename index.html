@@ -1,34 +1,150 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Veil</title>
+<title>Veil Browser</title>
 
 <style>
-body { margin:0; font-family:sans-serif; }
-#tabs { display:flex; background:#ddd; padding:5px; }
-.tab { padding:6px 12px; background:#bbb; margin-right:5px; cursor:pointer; }
-.active { background:#fff; }
-#bar { display:flex; padding:10px; background:#eee; }
-input { flex:1; padding:8px; }
-button { margin-left:5px; }
-webview { width:100%; height:calc(100vh - 90px); }
+:root {
+  --bg: #0f0f10;
+  --text: #eaeaea;
+  --input: #1b1b1d;
+  --btn: #2b2b2f;
+  --btn-hover: #3a3a40;
+}
+
+body.light {
+  --bg: #f5f5f5;
+  --text: #111;
+  --input: #ffffff;
+  --btn: #e6e6e6;
+  --btn-hover: #d6d6d6;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.center {
+  text-align: center;
+  width: 100%;
+  max-width: 600px;
+}
+
+.search-box {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+input {
+  width: 70%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: var(--input);
+  color: var(--text);
+  outline: none;
+}
+
+button {
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--btn);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:hover {
+  background: var(--btn-hover);
+}
+
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  font-size: 18px;
+}
+
+#img {
+  display: none;
+}
+
+.preview {
+  margin-top: 20px;
+  max-width: 200px;
+  border-radius: 10px;
+  display: none;
+}
 </style>
 </head>
 
 <body>
 
-<div id="tabs"></div>
+<div class="center">
 
-<div id="bar">
-  <input id="url" placeholder="Search or enter URL">
-  <button onclick="go()">Go</button>
-  <button onclick="newTab()">+</button>
+  <h2>Veil Browser</h2>
+
+  <div class="search-box">
+    <input placeholder="Search or enter URL">
+
+    <button>Go</button>
+
+    <!-- Image upload -->
+    <label for="img">
+      <button class="icon-btn">🖼</button>
+    </label>
+
+    <input type="file" id="img" accept="image/*">
+
+    <!-- Theme toggle (single button) -->
+    <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+  </div>
+
+  <img id="preview" class="preview">
+
 </div>
 
-<div id="views"></div>
+<script>
+const input = document.getElementById("img");
+const preview = document.getElementById("preview");
+const themeBtn = document.getElementById("themeBtn");
 
-<script src="renderer.js"></script>
+input.addEventListener("change", function () {
+  const file = this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    preview.src = e.target.result;
+    preview.style.display = "block";
+  };
+
+  reader.readAsDataURL(file);
+});
+
+function toggleTheme() {
+  document.body.classList.toggle("light");
+
+  if (document.body.classList.contains("light")) {
+    themeBtn.textContent = "☀️";
+  } else {
+    themeBtn.textContent = "🌙";
+  }
+}
+</script>
 
 </body>
 </html>
