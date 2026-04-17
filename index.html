@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Veil</title>
+
+<style>
+body { margin:0; font-family:sans-serif; }
+#tabs { display:flex; background:#ddd; padding:5px; }
+.tab { padding:6px 12px; background:#bbb; margin-right:5px; cursor:pointer; }
+.active { background:#fff; }
+#bar { display:flex; padding:10px; background:#eee; }
+input { flex:1; padding:8px; }
+button { margin-left:5px; }
+webview { width:100%; height:calc(100vh - 90px); }
+</style>
+</head>
+
+<body>
+
+<div id="tabs"></div>
+
+<div id="bar">
+  <input id="url" placeholder="Search or enter URL">
+  <button onclick="go()">Go</button>
+  <button onclick="newTab()">+</button>
+</div>
+
+<div id="views"></div>
+
+<script src="renderer.js"></script>
+
+</body>
+</html>
