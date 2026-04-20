@@ -1,149 +1,148 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Notrace Browser</title>
+<title>NoTrace Browser</title>
 
 <style>
-:root {
-  --bg: #0f0f10;
-  --text: #eaeaea;
-  --input: #1b1b1d;
-  --btn: #2b2b2f;
-  --btn-hover: #3a3a40;
-}
-
-body.light {
-  --bg: #f5f5f5;
-  --text: #111;
-  --input: #ffffff;
-  --btn: #e6e6e6;
-  --btn-hover: #d6d6d6;
-}
-
 body {
   margin: 0;
+  font-family: Arial;
+  background: #0f0f10;
+  color: #fff;
+}
+
+/* CENTER PAGE */
+#start {
   height: 100vh;
-  background: var(--bg);
-  color: var(--text);
-  font-family: Arial, sans-serif;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 }
 
 .center {
   text-align: center;
-  width: 100%;
-  max-width: 600px;
 }
 
-.search-box {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  align-items: center;
-}
-
-input {
-  width: 70%;
+.center input {
+  width: 400px;
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid #333;
-  background: var(--input);
-  color: var(--text);
-  outline: none;
-}
-
-button {
-  padding: 12px 14px;
   border: none;
+  background: #1b1b1d;
+  color: white;
+}
+
+.center button {
+  padding: 12px;
+  margin-left: 10px;
   border-radius: 10px;
-  background: var(--btn);
-  color: var(--text);
+  border: none;
+  background: #2b2b2f;
+  color: white;
   cursor: pointer;
+}
+
+/* BROWSER */
+#browser {
+  display: none;
+  height: 100vh;
+  flex-direction: column;
+}
+
+.top {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  background: #1b1b1d;
 }
 
-button:hover {
-  background: var(--btn-hover);
+.top input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #111;
+  color: white;
 }
 
-.icon-btn {
-  width: 42px;
-  height: 42px;
-  font-size: 18px;
+.top button {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #2b2b2f;
+  color: white;
 }
 
-#img {
-  display: none;
-}
-
-.preview {
-  margin-top: 20px;
-  max-width: 200px;
-  border-radius: 10px;
-  display: none;
+webview {
+  width: 100%;
+  height: 100%;
 }
 </style>
 </head>
 
 <body>
 
-<div class="center">
+<!-- START PAGE -->
+<div id="start">
+  <div class="center">
+    <h2>NoTrace Browser</h2>
+    <input id="search" placeholder="Search or enter URL">
+    <button onclick="search()">Go</button>
+  </div>
+</div>
 
-  <h2>Veil Browser</h2>
-
-  <div class="search-box">
-    <input placeholder="Search or enter URL">
-
-    <button>Go</button>
-
-    <!-- Image upload -->
-    <label for="img">
-      <button class="icon-btn">🖼</button>
-    </label>
-
-    <input type="file" id="img" accept="image/*">
-
-    <!-- Theme toggle (single button) -->
-    <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+<!-- BROWSER -->
+<div id="browser">
+  <div class="top">
+    <button onclick="back()">⬅</button>
+    <button onclick="forward()">➡</button>
+    <input id="url">
   </div>
 
-  <img id="preview" class="preview">
-
+  <webview id="view"></webview>
 </div>
 
 <script>
-const input = document.getElementById("img");
-const preview = document.getElementById("preview");
-const themeBtn = document.getElementById("themeBtn");
+const start = document.getElementById("start");
+const browser = document.getElementById("browser");
+const view = document.getElementById("view");
+const urlBar = document.getElementById("url");
 
-input.addEventListener("change", function () {
-  const file = this.files[0];
-  if (!file) return;
+/* SEARCH */
+function search() {
+  let v = document.getElementById("search").value.trim();
+  if (!v) return;
 
-  const reader = new FileReader();
+  if (!v.startsWith("http")) {
+    v = "https://duckduckgo.com/?q=" + encodeURIComponent(v);
+  }
 
-  reader.onload = function (e) {
-    preview.src = e.target.result;
-    preview.style.display = "block";
-  };
+  start.style.display = "none";
+  browser.style.display = "flex";
 
-  reader.readAsDataURL(file);
+  view.src = v;
+  urlBar.value = v;
+}
+
+/* ENTER KEY */
+document.getElementById("search").addEventListener("keydown", e => {
+  if (e.key === "Enter") search();
 });
 
-function toggleTheme() {
-  document.body.classList.toggle("light");
-
-  if (document.body.classList.contains("light")) {
-    themeBtn.textContent = "☀️";
-  } else {
-    themeBtn.textContent = "🌙";
-  }
+/* NAVIGATION */
+function back() {
+  view.goBack();
 }
+
+function forward() {
+  view.goForward();
+}
+
+/* UPDATE URL */
+view.addEventListener("did-navigate", (e) => {
+  urlBar.value = e.url;
+});
 </script>
 
 </body>
