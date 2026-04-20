@@ -1,17 +1,23 @@
 {
   "name": "notrace-browser",
   "version": "1.0.0",
+  "description": "NoTrace Browser",
   "main": "main.js",
+  "author": "",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.0.0"
   },
   "build": {
     "appId": "com.notrace.browser",
     "productName": "NoTrace Browser",
     "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico"
+      "target": "nsis"
     }
   }
 }
