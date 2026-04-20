@@ -9,10 +9,10 @@ body {
   margin: 0;
   font-family: Arial;
   background: #0f0f10;
-  color: #fff;
+  color: white;
 }
 
-/* CENTER PAGE */
+/* START PAGE */
 #start {
   height: 100vh;
   display: flex;
@@ -40,7 +40,6 @@ body {
   border: none;
   background: #2b2b2f;
   color: white;
-  cursor: pointer;
 }
 
 /* BROWSER */
@@ -50,11 +49,54 @@ body {
   flex-direction: column;
 }
 
+.tabs {
+  display: flex;
+  background: #111;
+  padding: 6px;
+  gap: 6px;
+}
+
+.tab {
+  background: #2a2a2f;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+.tab span:last-child {
+  margin-left: 6px;
+  font-size: 12px;
+}
+.tabs .tab:last-child {
+  padding: 4px 10px;
+  font-size: 14px;
+}
+
+.tab.active {
+  background: #3a3a40;
+}
+
 .top {
   display: flex;
   gap: 8px;
   padding: 8px;
   background: #1b1b1d;
+}
+
+/* ✅ FIXED BUTTON STYLE (moved here) */
+.top button {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #2b2b2f;
+  color: white;
+  cursor: pointer;
+}
+
+.top button:hover {
+  background: #3a3a40;
 }
 
 .top input {
@@ -66,24 +108,21 @@ body {
   color: white;
 }
 
-.top button {
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-  background: #2b2b2f;
-  color: white;
-}
-
 webview {
   width: 100%;
   height: 100%;
+  display: none;
+}
+
+webview.active {
+  display: flex;
 }
 </style>
 </head>
 
 <body>
 
-<!-- START PAGE -->
+<!-- START -->
 <div id="start">
   <div class="center">
     <h2>NoTrace Browser</h2>
@@ -94,22 +133,28 @@ webview {
 
 <!-- BROWSER -->
 <div id="browser">
+  <div class="tabs" id="tabs"></div>
+
   <div class="top">
+    <button onclick="goHome()">🏠</button>
     <button onclick="back()">⬅</button>
     <button onclick="forward()">➡</button>
     <input id="url">
   </div>
 
-  <webview id="view"></webview>
+  <div id="views"></div>
 </div>
 
 <script>
+let tabs = [];
+let active = -1;
+
 const start = document.getElementById("start");
 const browser = document.getElementById("browser");
-const view = document.getElementById("view");
+const tabsDiv = document.getElementById("tabs");
+const viewsDiv = document.getElementById("views");
 const urlBar = document.getElementById("url");
 
-/* SEARCH */
 function search() {
   let v = document.getElementById("search").value.trim();
   if (!v) return;
@@ -121,27 +166,138 @@ function search() {
   start.style.display = "none";
   browser.style.display = "flex";
 
-  view.src = v;
-  urlBar.value = v;
+  createTab(v);
 }
 
-/* ENTER KEY */
+function createTab(url = "https://duckduckgo.com") {
+  const webview = document.createElement("webview");
+  webview.src = url;
+
+  viewsDiv.appendChild(webview);
+
+  tabs.push({
+    view: webview,
+    title: "New Tab"
+  });
+
+  active = tabs.length - 1;
+
+  webview.addEventListener("page-title-updated", e => {
+    tabs[active].title = e.title;
+    renderTabs();
+  });
+
+  webview.addEventListener("did-navigate", e => {
+    if (tabs[active].view === webview) {
+      urlBar.value = e.url;
+    }
+  });
+
+  switchTab(active);
+  renderTabs();
+}
+
+function switchTab(i) {
+  active = i;
+
+  tabs.forEach((t, index) => {
+    t.view.classList.remove("active");
+    if (index === i) {
+      t.view.classList.add("active");
+      urlBar.value = t.view.src;
+    }
+  });
+
+  renderTabs();
+}
+
+function closeTab(i) {
+  viewsDiv.removeChild(tabs[i].view);
+  tabs.splice(i, 1);
+
+  if (tabs.length === 0) {
+    active = -1;
+    browser.style.display = "none";
+    start.style.display = "flex";
+    return;
+  }
+
+  active = Math.max(0, i - 1);
+  switchTab(active);
+}
+
+function renderTabs() {
+  tabsDiv.innerHTML = "";
+
+  tabs.forEach((t, i) => {
+    const el = document.createElement("div");
+    el.className = "tab " + (i === active ? "active" : "");
+
+    const title = document.createElement("span");
+    title.textContent = t.title;
+
+    const close = document.createElement("span");
+    close.textContent = " ✕";
+    close.style.marginLeft = "6px";
+    close.style.cursor = "pointer";
+
+    close.onclick = (e) => {
+      e.stopPropagation();
+      closeTab(i);
+    };
+
+    el.appendChild(title);
+    el.appendChild(close);
+
+    el.onclick = () => switchTab(i);
+
+    tabsDiv.appendChild(el);
+  });
+
+  /* + BUTTON AT END */
+  const add = document.createElement("div");
+  add.className = "tab";
+  add.textContent = "+";
+  add.style.fontWeight = "bold";
+
+  add.onclick = () => newTab();
+
+  tabsDiv.appendChild(add);
+}
+
+function back() {
+  if (active === -1) return;
+  tabs[active].view.goBack();
+}
+
+function forward() {
+  if (active === -1) return;
+  tabs[active].view.goForward();
+}
+
+function goHome() {
+  browser.style.display = "none";
+  start.style.display = "flex";
+}
+
+function newTab() {
+  createTab();
+}
+
 document.getElementById("search").addEventListener("keydown", e => {
   if (e.key === "Enter") search();
 });
 
-/* NAVIGATION */
-function back() {
-  view.goBack();
-}
+urlBar.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    let v = urlBar.value;
 
-function forward() {
-  view.goForward();
-}
+    if (!v.startsWith("http")) {
+      v = "https://duckduckgo.com/?q=" + encodeURIComponent(v);
+    }
 
-/* UPDATE URL */
-view.addEventListener("did-navigate", (e) => {
-  urlBar.value = e.url;
+    tabs[active].view.src = v;
+  }
 });
 </script>
 
