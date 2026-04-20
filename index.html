@@ -12,7 +12,6 @@ body {
   color: white;
 }
 
-/* START PAGE */
 #start {
   height: 100vh;
   display: flex;
@@ -42,11 +41,12 @@ body {
   color: white;
 }
 
-/* BROWSER */
 #browser {
-  display: none;
-  height: 100vh;
-  flex-direction: column;
+  height: calc(100vh - 30px);
+}
+
+#start {
+  height: calc(100vh - 30px);
 }
 
 .tabs {
@@ -65,10 +65,12 @@ body {
   display: flex;
   align-items: center;
 }
+
 .tab span:last-child {
   margin-left: 6px;
   font-size: 12px;
 }
+
 .tabs .tab:last-child {
   padding: 4px 10px;
   font-size: 14px;
@@ -85,7 +87,6 @@ body {
   background: #1b1b1d;
 }
 
-/* ✅ FIXED BUTTON STYLE (moved here) */
 .top button {
   padding: 10px;
   border-radius: 8px;
@@ -107,6 +108,9 @@ body {
   background: #111;
   color: white;
 }
+button, input {
+  -webkit-app-region: no-drag;
+}
 
 webview {
   width: 100%;
@@ -117,10 +121,80 @@ webview {
 webview.active {
   display: flex;
 }
+
+.window-controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
+
+  -webkit-app-region: no-drag;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.red { background: #ff5f57; }
+.yellow { background: #ffbd2e; }
+.green { background: #28c840; }
+.window-controls button {
+  background: #2b2b2f;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.titlebar {
+  height: 30px;
+  background: #111;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+
+  -webkit-app-region: drag;
+}
+
+.window-controls {
+  display: flex;
+  gap: 8px;
+
+  -webkit-app-region: no-drag;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.red { background: #ff5f57; }
+.yellow { background: #ffbd2e; }
+.green { background: #28c840; }
+
+/* keep buttons clickable */
+button, input {
+  -webkit-app-region: no-drag;
+}
 </style>
 </head>
 
 <body>
+
+<div class="titlebar">
+  <div class="window-controls">
+    <div class="dot red" onclick="closeApp()"></div>
+    <div class="dot yellow" onclick="minimize()"></div>
+    <div class="dot green" onclick="maximize()"></div>
+  </div>
+</div>
 
 <!-- START -->
 <div id="start">
@@ -155,6 +229,7 @@ const tabsDiv = document.getElementById("tabs");
 const viewsDiv = document.getElementById("views");
 const urlBar = document.getElementById("url");
 
+/* SEARCH */
 function search() {
   let v = document.getElementById("search").value.trim();
   if (!v) return;
@@ -169,9 +244,11 @@ function search() {
   createTab(v);
 }
 
-function createTab(url = "https://duckduckgo.com") {
+/* CREATE TAB */
+function createTab(url = "") {
   const webview = document.createElement("webview");
-  webview.src = url;
+
+  if (url) webview.src = url;
 
   viewsDiv.appendChild(webview);
 
@@ -188,29 +265,35 @@ function createTab(url = "https://duckduckgo.com") {
   });
 
   webview.addEventListener("did-navigate", e => {
-    if (tabs[active].view === webview) {
-      urlBar.value = e.url;
-    }
+    urlBar.value = e.url;
   });
 
   switchTab(active);
   renderTabs();
 }
 
+/* SWITCH TAB */
 function switchTab(i) {
   active = i;
 
   tabs.forEach((t, index) => {
     t.view.classList.remove("active");
+
     if (index === i) {
       t.view.classList.add("active");
-      urlBar.value = t.view.src;
+
+      browser.style.display = "flex";
+      start.style.display = "none";
+
+      if (t.view.src) {
+        urlBar.value = t.view.src;
+      }
     }
   });
 
   renderTabs();
 }
-
+/* CLOSE TAB */
 function closeTab(i) {
   viewsDiv.removeChild(tabs[i].view);
   tabs.splice(i, 1);
@@ -222,10 +305,10 @@ function closeTab(i) {
     return;
   }
 
-  active = Math.max(0, i - 1);
+  active = Math.min(i, tabs.length - 1);
   switchTab(active);
 }
-
+/* RENDER */
 function renderTabs() {
   tabsDiv.innerHTML = "";
 
@@ -238,8 +321,6 @@ function renderTabs() {
 
     const close = document.createElement("span");
     close.textContent = " ✕";
-    close.style.marginLeft = "6px";
-    close.style.cursor = "pointer";
 
     close.onclick = (e) => {
       e.stopPropagation();
@@ -248,31 +329,26 @@ function renderTabs() {
 
     el.appendChild(title);
     el.appendChild(close);
-
     el.onclick = () => switchTab(i);
 
     tabsDiv.appendChild(el);
   });
 
-  /* + BUTTON AT END */
   const add = document.createElement("div");
   add.className = "tab";
   add.textContent = "+";
-  add.style.fontWeight = "bold";
-
   add.onclick = () => newTab();
 
   tabsDiv.appendChild(add);
 }
 
+/* NAV */
 function back() {
-  if (active === -1) return;
-  tabs[active].view.goBack();
+  if (active !== -1) tabs[active].view.goBack();
 }
 
 function forward() {
-  if (active === -1) return;
-  tabs[active].view.goForward();
+  if (active !== -1) tabs[active].view.goForward();
 }
 
 function goHome() {
@@ -281,9 +357,10 @@ function goHome() {
 }
 
 function newTab() {
-  createTab();
+  createTab("");
 }
 
+/* ENTER */
 document.getElementById("search").addEventListener("keydown", e => {
   if (e.key === "Enter") search();
 });
@@ -299,6 +376,21 @@ urlBar.addEventListener("keydown", e => {
     tabs[active].view.src = v;
   }
 });
+
+/* WINDOW CONTROLS */
+const { ipcRenderer } = require("electron");
+
+function minimize() {
+  ipcRenderer.send("minimize");
+}
+
+function maximize() {
+  ipcRenderer.send("maximize");
+}
+
+function closeApp() {
+  ipcRenderer.send("close");
+}
 </script>
 
 </body>
