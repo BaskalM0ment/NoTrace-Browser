@@ -1,51 +1,94 @@
 let tabs = [];
-let activeTab = 0;
+let active = -1;
 
-const tabsDiv = document.getElementById('tabs');
-const viewsDiv = document.getElementById('views');
-const input = document.getElementById('url');
+const view = document.getElementById("view");
+const start = document.getElementById("start");
+const browser = document.getElementById("browser");
+const tabsDiv = document.getElementById("tabs");
+const input = document.getElementById("url");
 
-function newTab(url = "https://duckduckgo.com") {
-  tabs.push(url);
-  activeTab = tabs.length - 1;
-  render();
+function newTab(url = "") {
+  const tab = { history: [], index: -1, title: "New Tab" };
+  tabs.push(tab);
+  active = tabs.length - 1;
+
+  if (url) loadTab(active, url);
+  renderTabs();
 }
 
-function go() {
-  let value = input.value.trim();
+function loadTab(i, url) {
+  const t = tabs[i];
+  t.history.push(url);
+  t.index++;
 
-  if (!value.startsWith('http')) {
-    value = 'https://duckduckgo.com/?q=' + encodeURIComponent(value);
-  }
-
-  tabs[activeTab] = value;
-  render();
+  view.src = url;
+  start.style.display = "none";
+  browser.style.display = "block";
 }
 
-function render() {
-  tabsDiv.innerHTML = '';
-  viewsDiv.innerHTML = '';
+function goStart() {
+  let v = document.getElementById("startInput").value;
+  if (!v) return;
 
-  tabs.forEach((url, i) => {
-    const tab = document.createElement('div');
-    tab.className = 'tab ' + (i === activeTab ? 'active' : '');
-    tab.innerText = 'Tab ' + (i + 1);
+  v = "https://duckduckgo.com/?q=" + encodeURIComponent(v);
+  newTab(v);
+}
 
-    tab.onclick = () => {
-      activeTab = i;
-      render();
+function renderTabs() {
+  tabsDiv.innerHTML = "";
+
+  tabs.forEach((t, i) => {
+    const el = document.createElement("div");
+    el.className = "tab " + (i === active ? "active" : "");
+
+    const title = document.createElement("span");
+    title.textContent = t.title;
+
+    const close = document.createElement("span");
+    close.textContent = " ✕";
+
+    close.onclick = (e) => {
+      e.stopPropagation();
+      tabs.splice(i, 1);
+      active = 0;
+      renderTabs();
     };
 
-    tabsDiv.appendChild(tab);
+    el.onclick = () => switchTab(i);
 
-    const view = document.createElement('webview');
-    view.src = url;
-    view.style.display = i === activeTab ? 'flex' : 'none';
-
-    viewsDiv.appendChild(view);
+    el.appendChild(title);
+    el.appendChild(close);
+    tabsDiv.appendChild(el);
   });
-
-  input.value = tabs[activeTab] || '';
 }
 
-newTab();
+function switchTab(i) {
+  active = i;
+  view.src = tabs[i].history[tabs[i].index];
+}
+
+function back() {
+  const t = tabs[active];
+  if (t.index > 0) {
+    t.index--;
+    view.src = t.history[t.index];
+  }
+}
+
+function forward() {
+  const t = tabs[active];
+  if (t.index < t.history.length - 1) {
+    t.index++;
+    view.src = t.history[t.index];
+  }
+}
+
+function toggleTheme() {
+  document.body.classList.toggle("light");
+}
+
+view.addEventListener("page-title-updated", (e) => {
+  if (active === -1) return;
+  tabs[active].title = e.title;
+  renderTabs();
+});
