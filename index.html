@@ -265,11 +265,6 @@ function search() {
     v = "https://duckduckgo.com/?q=" + encodeURIComponent(v);
   }
 
-  hasOpenedTab = true;
-
-  start.style.display = "none";
-  browser.style.display = "flex";
-
   createTab(v);
 }
 
@@ -299,16 +294,6 @@ function createTab(url = "") {
     urlBar.value = e.url;
   });
 
-  // 👇 KEY LOGIC
-  if (!url) {
-    // Home tab
-    browser.style.display = "flex";
-    start.style.display = "flex";
-  } else {
-    browser.style.display = "flex";
-    start.style.display = "none";
-  }
-
   switchTab(active);
   renderTabs();
 }
@@ -324,17 +309,17 @@ function switchTab(i) {
       t.view.classList.add("active");
 
       if (!t.view.src) {
-        // home tab
-        browser.style.display = "flex";
         start.style.display = "flex";
+        viewsDiv.style.display = "none";
       } else {
-        browser.style.display = "flex";
         start.style.display = "none";
+        viewsDiv.style.display = "flex";
         urlBar.value = t.view.src;
       }
     }
   });
 
+  browser.style.display = "flex";
   renderTabs();
 }
 
