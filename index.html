@@ -10,23 +10,63 @@ body {
   font-family: Arial;
   background: #0f0f10;
   color: white;
-
-  height: 100vh;
   display: flex;
   flex-direction: column;
+  height: 100vh;
 }
 
-#start {
-  flex: 1;
+/* TITLEBAR */
+.titlebar {
+  height: 32px;
+  background: #111;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  -webkit-app-region: drag;
+}
+
+.window-controls {
+  display: flex;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: bold;
+  color: #111;
+  cursor: pointer;
+}
+
+.red { background: #ff5f57; }
+.yellow { background: #ffbd2e; }
+.green { background: #28c840; }
+
+button, input {
+  -webkit-app-region: no-drag;
+}
+
+/* MAIN */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* HOME */
+#home {
+  position: absolute;
+  inset: 0;
+
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-#browser {
-  flex: 1;
-  display: none;
-  flex-direction: column;
 }
 
 .center {
@@ -51,42 +91,36 @@ body {
   color: white;
 }
 
+/* TABS */
 .tabs {
+  flex-shrink: 0;
+
   display: flex;
   background: #111;
-  padding: 6px;
-  gap: 6px;
+  padding: 4px;
+  gap: 4px;
 }
 
 .tab {
   background: #2a2a2f;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 2px 6px;
+  border-radius: 5px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+
   display: flex;
   align-items: center;
 
-  max-width: 160px;
+  max-width: 140px;
   overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.tab span:last-child {
-  margin-left: 6px;
-  font-size: 12px;
-}
-
-.tabs .tab:last-child {
-  padding: 4px 10px;
-  font-size: 14px;
 }
 
 .tab.active {
   background: #3a3a40;
 }
 
+/* NAV */
 .top {
   display: flex;
   gap: 8px;
@@ -100,11 +134,6 @@ body {
   border: none;
   background: #2b2b2f;
   color: white;
-  cursor: pointer;
-}
-
-.top button:hover {
-  background: #3a3a40;
 }
 
 .top input {
@@ -115,100 +144,11 @@ body {
   background: #111;
   color: white;
 }
-button, input {
-  -webkit-app-region: no-drag;
-}
 
-webview {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  display: none;
-}
-
-webview.active {
-  display: flex;
-}
-
-.red { background: #ff5f57; }
-.yellow { background: #ffbd2e; }
-.green { background: #28c840; }
-.window-controls button {
-  background: #2b2b2f;
-  border: none;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.titlebar {
-  height: 32px;
-  background: #111;
-
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-
-  padding-left: 10px;
-
-  -webkit-app-region: drag;
-}
-
-.window-controls {
-  display: flex;
-  gap: 8px;
-
-  position: absolute;
-  left: 10px;
-
-  -webkit-app-region: no-drag;
-}
-
-.dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 9px;
-  font-weight: bold;
-  color: #111;
-  cursor: pointer;
-}
-
-.red { background: #ff5f57; }
-.yellow { background: #ffbd2e; }
-.green { background: #28c840; }
-
-button, input {
-  -webkit-app-region: no-drag;
-}
-.titlebar {
-  justify-content: flex-start !important;
-}
-
-.window-controls {
-  margin-left: 0 !important;
-  justify-content: flex-start !important;
-}
-body {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Titlebar stays on top */
-.titlebar {
-  height: 32px;
-  flex-shrink: 0;
-}
-
-#views {
-  flex: 1;
+/* VIEW */
+#view {
   position: relative;
+  flex: 1;
 }
 
 webview {
@@ -216,14 +156,12 @@ webview {
   inset: 0;
   width: 100%;
   height: 100%;
-
   display: none;
 }
 
 webview.active {
   display: block;
 }
-
 </style>
 </head>
 
@@ -237,37 +175,38 @@ webview.active {
   </div>
 </div>
 
-<div id="start">
-  <div class="center">
-    <h2>NoTrace Browser</h2>
-    <input id="search" placeholder="Search or enter URL">
-    <button onclick="search()">Go</button>
-  </div>
-</div>
-
-<div id="browser">
-  <div class="tabs" id="tabs"></div>
+<div id="app">
 
   <div class="top">
-    <button onclick="goHome()">🏠</button>
+    <button onclick="showHome()">🏠</button>
     <button onclick="back()">⬅</button>
     <button onclick="forward()">➡</button>
     <input id="url">
   </div>
 
-  <div id="views"></div>
+  <div id="home">
+    <div class="center">
+      <h2>NoTrace Browser</h2>
+      <input id="search">
+      <button onclick="search()">Go</button>
+    </div>
+  <div class="tabs" id="tabs"></div>
+
+  <div id="view"></div>
+
 </div>
 
 <script>
-let hasOpenedTab = false;
 let tabs = [];
 let active = -1;
 
-const start = document.getElementById("start");
-const browser = document.getElementById("browser");
 const tabsDiv = document.getElementById("tabs");
-const viewsDiv = document.getElementById("views");
+const viewDiv = document.getElementById("view");
+const home = document.getElementById("home");
 const urlBar = document.getElementById("url");
+
+/* HOME FIRST LOAD */
+showHome();
 
 /* SEARCH */
 function search() {
@@ -285,17 +224,11 @@ function search() {
 function createTab(url = "") {
   const webview = document.createElement("webview");
 
-  if (url) {
-    webview.src = url;
-  }
+  if (url) webview.src = url;
 
-  viewsDiv.appendChild(webview);
+  viewDiv.appendChild(webview);
 
-  tabs.push({
-    view: webview,
-    title: "New Tab"
-  });
-
+  tabs.push({ view: webview, title: "New Tab" });
   active = tabs.length - 1;
 
   webview.addEventListener("page-title-updated", e => {
@@ -308,51 +241,43 @@ function createTab(url = "") {
   });
 
   switchTab(active);
-  renderTabs();
 }
 
-/* SWITCH TAB */
+/* SWITCH */
 function switchTab(i) {
   active = i;
 
   tabs.forEach((t, index) => {
     t.view.classList.remove("active");
+
+    if (index === i) {
+      if (t.view.src) {
+        home.style.display = "none";
+        t.view.classList.add("active");
+      } else {
+        showHome();
+      }
+    }
   });
 
-  const t = tabs[i];
-
-  if (!t.view.src) {
-    // HOME ONLY
-    start.style.display = "flex";
-    viewsDiv.style.display = "none";
-  } else {
-    // WEB ONLY
-    start.style.display = "none";
-    viewsDiv.style.display = "flex";
-
-    t.view.classList.add("active");
-    urlBar.value = t.view.src;
-  }
-
-  browser.style.display = "flex";
   renderTabs();
 }
 
-/* CLOSE TAB */
+/* CLOSE */
 function closeTab(i) {
-  viewsDiv.removeChild(tabs[i].view);
+  viewDiv.removeChild(tabs[i].view);
   tabs.splice(i, 1);
 
   if (tabs.length === 0) {
     active = -1;
-    browser.style.display = "none";
-    start.style.display = "flex";
+    showHome();
     return;
   }
 
-  active = Math.min(i, tabs.length - 1);
+  active = Math.max(0, i - 1);
   switchTab(active);
 }
+
 /* RENDER */
 function renderTabs() {
   tabsDiv.innerHTML = "";
@@ -360,19 +285,17 @@ function renderTabs() {
   tabs.forEach((t, i) => {
     const el = document.createElement("div");
     el.className = "tab " + (i === active ? "active" : "");
-
-    const title = document.createElement("span");
-    title.textContent = t.title;
+    el.textContent = t.title;
 
     const close = document.createElement("span");
-    close.textContent = " ✕";
-
+    close.textContent = "×";
+    close.style.marginLeft = "4px";
+    close.style.fontSize = "11px";
     close.onclick = (e) => {
       e.stopPropagation();
       closeTab(i);
     };
 
-    el.appendChild(title);
     el.appendChild(close);
     el.onclick = () => switchTab(i);
 
@@ -382,7 +305,10 @@ function renderTabs() {
   const add = document.createElement("div");
   add.className = "tab";
   add.textContent = "+";
-  add.onclick = () => newTab();
+  add.onclick = () => {
+    createTab("");
+    showHome();
+  };
 
   tabsDiv.appendChild(add);
 }
@@ -396,18 +322,10 @@ function forward() {
   if (active !== -1) tabs[active].view.goForward();
 }
 
-function goHome() {
-  browser.style.display = "none";
-  start.style.display = "flex";
-}
+function showHome() {
+  home.style.display = "flex";
 
-function newTab() {
-  hasOpenedTab = true;
-
-  browser.style.display = "flex";
-  start.style.display = "flex";
-
-  createTab(""); // empty = home
+  tabs.forEach(t => t.view.classList.remove("active"));
 }
 
 /* ENTER */
@@ -424,20 +342,20 @@ urlBar.addEventListener("keydown", e => {
     }
 
     tabs[active].view.src = v;
+    home.style.display = "none";
+    tabs[active].view.classList.add("active");
   }
 });
 
-/* WINDOW CONTROLS */
+/* WINDOW */
 const { ipcRenderer } = require("electron");
 
 function minimize() {
   ipcRenderer.send("minimize");
 }
-
 function maximize() {
   ipcRenderer.send("maximize");
 }
-
 function closeApp() {
   ipcRenderer.send("close");
 }
