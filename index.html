@@ -206,9 +206,22 @@ body {
   flex-shrink: 0;
 }
 
-/* Everything below fills remaining space */
-#start, #browser {
+#views {
   flex: 1;
+  position: relative;
+}
+
+webview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+
+  display: none;
+}
+
+webview.active {
+  display: block;
 }
 
 </style>
@@ -304,20 +317,22 @@ function switchTab(i) {
 
   tabs.forEach((t, index) => {
     t.view.classList.remove("active");
-
-    if (index === i) {
-      t.view.classList.add("active");
-
-      if (!t.view.src) {
-        start.style.display = "flex";
-        viewsDiv.style.display = "none";
-      } else {
-        start.style.display = "none";
-        viewsDiv.style.display = "flex";
-        urlBar.value = t.view.src;
-      }
-    }
   });
+
+  const t = tabs[i];
+
+  if (!t.view.src) {
+    // HOME ONLY
+    start.style.display = "flex";
+    viewsDiv.style.display = "none";
+  } else {
+    // WEB ONLY
+    start.style.display = "none";
+    viewsDiv.style.display = "flex";
+
+    t.view.classList.add("active");
+    urlBar.value = t.view.src;
+  }
 
   browser.style.display = "flex";
   renderTabs();
