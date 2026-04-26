@@ -23,6 +23,8 @@ body {
   align-items: center;
   padding-left: 10px;
   -webkit-app-region: drag;
+  position: relative;
+  z-index: 9999;
 }
 
 .window-controls {
@@ -52,72 +54,54 @@ button, input {
   -webkit-app-region: no-drag;
 }
 
-/* MAIN */
+/* APP */
 #app {
   display: flex;
   flex-direction: column;
-  height: 100%;
-}
-
-/* HOME */
-#home {
-  position: absolute;
-  inset: 0;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.center {
-  text-align: center;
-}
-
-.center input {
-  width: 400px;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: #1b1b1d;
-  color: white;
-}
-
-.center button {
-  padding: 12px;
-  margin-left: 10px;
-  border-radius: 10px;
-  border: none;
-  background: #2b2b2f;
-  color: white;
+  flex: 1;
+  min-height: 0;
 }
 
 /* TABS */
 .tabs {
-  flex-shrink: 0;
-
   display: flex;
-  background: #111;
-  padding: 4px;
-  gap: 4px;
+  gap: 6px;
+  padding: 6px;
+  background: #0f0f10;
+  border-bottom: 1px solid #222;
+}
+
+.tabs.hidden {
+  display: none;
 }
 
 .tab {
-  background: #2a2a2f;
-  padding: 2px 6px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-
   display: flex;
   align-items: center;
-
-  max-width: 140px;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #1b1b1d;
+  color: #ccc;
+  font-size: 12px;
+  cursor: pointer;
+  max-width: 180px;
   overflow: hidden;
+}
+
+.tab:hover { background: #2a2a2f; color: #fff; }
+.tab.active { background: #3a3a40; color: #fff; }
+
+.tab .title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.tab.active {
-  background: #3a3a40;
+.tab .close {
+  flex-shrink: 0;
+  cursor: pointer;
 }
 
 /* NAV */
@@ -129,11 +113,16 @@ button, input {
 }
 
 .top button {
-  padding: 10px;
-  border-radius: 8px;
+  padding: 8px;
+  border-radius: 6px;
   border: none;
   background: #2b2b2f;
-  color: white;
+  color: #fff;
+  cursor: pointer;
+}
+
+.top button:hover {
+  background: #3a3a40;
 }
 
 .top input {
@@ -162,6 +151,44 @@ webview {
 webview.active {
   display: block;
 }
+
+/* HOME */
+#home {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f0f10;
+  z-index: 5;
+}
+
+#home.hidden {
+  display: none;
+}
+
+.center input {
+  width: 400px;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #1b1b1d;
+  color: white;
+}
+
+.center button {
+  padding: 12px;
+  margin-left: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #2b2b2f;
+  color: white;
+}
+
+.tabs.hidden {
+  display: none;
+}
+
 </style>
 </head>
 
@@ -176,6 +203,7 @@ webview.active {
 </div>
 
 <div id="app">
+  <div class="tabs" id="tabs"></div>
 
   <div class="top">
     <button onclick="showHome()">🏠</button>
@@ -184,16 +212,15 @@ webview.active {
     <input id="url">
   </div>
 
+  <div id="view"></div>
+
   <div id="home">
     <div class="center">
       <h2>NoTrace Browser</h2>
       <input id="search">
       <button onclick="search()">Go</button>
     </div>
-  <div class="tabs" id="tabs"></div>
-
-  <div id="view"></div>
-
+  </div>
 </div>
 
 <script>
@@ -204,9 +231,6 @@ const tabsDiv = document.getElementById("tabs");
 const viewDiv = document.getElementById("view");
 const home = document.getElementById("home");
 const urlBar = document.getElementById("url");
-
-/* HOME FIRST LOAD */
-showHome();
 
 /* SEARCH */
 function search() {
@@ -240,10 +264,11 @@ function createTab(url = "") {
     urlBar.value = e.url;
   });
 
+  if (url) hideHome();
   switchTab(active);
 }
 
-/* SWITCH */
+/* SWITCH TAB */
 function switchTab(i) {
   active = i;
 
@@ -252,7 +277,7 @@ function switchTab(i) {
 
     if (index === i) {
       if (t.view.src) {
-        home.style.display = "none";
+        hideHome();
         t.view.classList.add("active");
       } else {
         showHome();
@@ -263,7 +288,7 @@ function switchTab(i) {
   renderTabs();
 }
 
-/* CLOSE */
+/* CLOSE TAB */
 function closeTab(i) {
   viewDiv.removeChild(tabs[i].view);
   tabs.splice(i, 1);
@@ -280,22 +305,33 @@ function closeTab(i) {
 
 /* RENDER */
 function renderTabs() {
+
+  if (tabs.length === 0) {
+    tabsDiv.classList.add("hidden");
+  } else {
+    tabsDiv.classList.remove("hidden");
+  }
+
   tabsDiv.innerHTML = "";
 
   tabs.forEach((t, i) => {
     const el = document.createElement("div");
     el.className = "tab " + (i === active ? "active" : "");
-    el.textContent = t.title;
+
+    const title = document.createElement("span");
+    title.className = "title";
+    title.textContent = t.title;
 
     const close = document.createElement("span");
+    close.className = "close";
     close.textContent = "×";
-    close.style.marginLeft = "4px";
-    close.style.fontSize = "11px";
+
     close.onclick = (e) => {
       e.stopPropagation();
       closeTab(i);
     };
 
+    el.appendChild(title);
     el.appendChild(close);
     el.onclick = () => switchTab(i);
 
@@ -322,10 +358,13 @@ function forward() {
   if (active !== -1) tabs[active].view.goForward();
 }
 
+/* HOME */
 function showHome() {
-  home.style.display = "flex";
+  home.classList.remove("hidden");
+}
 
-  tabs.forEach(t => t.view.classList.remove("active"));
+function hideHome() {
+  home.classList.add("hidden");
 }
 
 /* ENTER */
@@ -334,7 +373,7 @@ document.getElementById("search").addEventListener("keydown", e => {
 });
 
 urlBar.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
+  if (e.key === "Enter" && active !== -1) {
     let v = urlBar.value;
 
     if (!v.startsWith("http")) {
@@ -342,7 +381,7 @@ urlBar.addEventListener("keydown", e => {
     }
 
     tabs[active].view.src = v;
-    home.style.display = "none";
+    hideHome();
     tabs[active].view.classList.add("active");
   }
 });
@@ -359,6 +398,160 @@ function maximize() {
 function closeApp() {
   ipcRenderer.send("close");
 }
+
+function renderTabs() {
+
+  if (tabs.length === 0) {
+    tabsDiv.classList.add("hidden");
+  } else {
+    tabsDiv.classList.remove("hidden");
+  }
+
+  tabsDiv.innerHTML = "";
+
+  tabs.forEach((t, i) => {
+    const el = document.createElement("div");
+    el.className = "tab " + (i === active ? "active" : "");
+
+    const title = document.createElement("span");
+    title.className = "title";
+    title.textContent = t.title;
+
+    const close = document.createElement("span");
+    close.className = "close";
+    close.textContent = "×";
+
+    close.onclick = (e) => {
+      e.stopPropagation();
+      closeTab(i);
+    };
+
+    el.appendChild(title);
+    el.appendChild(close);
+
+    el.onclick = () => switchTab(i);
+
+    tabsDiv.appendChild(el);
+  });
+
+  const add = document.createElement("div");
+  add.className = "tab";
+  add.textContent = "+";
+
+  add.onclick = () => {
+    createTab("");
+    showHome();
+  };
+
+  tabsDiv.appendChild(add);
+}
+
+function createTab(url = "") {
+  const webview = document.createElement("webview");
+
+  if (url) webview.src = url;
+
+  viewDiv.appendChild(webview);
+
+  tabs.push({ view: webview, title: "New Tab" });
+  active = tabs.length - 1;
+
+  webview.addEventListener("page-title-updated", e => {
+    tabs[active].title = e.title;
+    renderTabs();
+  });
+
+  webview.addEventListener("did-navigate", e => {
+    urlBar.value = e.url;
+  });
+
+  if (url) hideHome();
+
+  switchTab(active);
+  renderTabs();
+}
+
+function switchTab(i) {
+  active = i;
+
+  tabs.forEach((t, index) => {
+    t.view.classList.remove("active");
+
+    if (index === i) {
+      if (t.view.src) {
+        hideHome();
+        t.view.classList.add("active");
+      } else {
+        showHome();
+      }
+    }
+  });
+
+  renderTabs();
+}
+
+function closeTab(i) {
+  viewDiv.removeChild(tabs[i].view);
+  tabs.splice(i, 1);
+
+  if (tabs.length === 0) {
+    active = -1;
+    showHome();
+    renderTabs();
+    return;
+  }
+
+  active = Math.max(0, i - 1);
+  switchTab(active);
+  renderTabs();
+}
+
+function renderTabs() {
+
+  if (tabs.length === 0) {
+    tabsDiv.classList.add("hidden");
+  } else {
+    tabsDiv.classList.remove("hidden");
+  }
+
+  tabsDiv.innerHTML = "";
+
+  tabs.forEach((t, i) => {
+    const el = document.createElement("div");
+    el.className = "tab " + (i === active ? "active" : "");
+
+    const title = document.createElement("span");
+    title.className = "title";
+    title.textContent = t.title;
+
+    const close = document.createElement("span");
+    close.className = "close";
+    close.textContent = "×";
+
+    close.onclick = (e) => {
+      e.stopPropagation();
+      closeTab(i);
+    };
+
+    el.appendChild(title);
+    el.appendChild(close);
+    el.onclick = () => switchTab(i);
+
+    tabsDiv.appendChild(el);
+  });
+
+  const add = document.createElement("div");
+  add.className = "tab";
+  add.textContent = "+";
+
+  add.onclick = () => {
+    createTab("");
+    showHome();
+  };
+
+  tabsDiv.appendChild(add);
+}
+
 </script>
 
 </body>
