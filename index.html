@@ -23,8 +23,6 @@ body {
   align-items: center;
   padding-left: 10px;
   -webkit-app-region: drag;
-  position: relative;
-  z-index: 9999;
 }
 
 .window-controls {
@@ -59,20 +57,15 @@ button, input {
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 0;
 }
 
 /* TABS */
 .tabs {
-  display: flex;
+  display: none;
   gap: 6px;
   padding: 6px;
   background: #0f0f10;
   border-bottom: 1px solid #222;
-}
-
-.tabs.hidden {
-  display: none;
 }
 
 .tab {
@@ -160,7 +153,6 @@ webview.active {
   justify-content: center;
   align-items: center;
   background: #0f0f10;
-  z-index: 5;
 }
 
 #home.hidden {
@@ -184,11 +176,6 @@ webview.active {
   background: #2b2b2f;
   color: white;
 }
-
-.tabs.hidden {
-  display: none;
-}
-
 </style>
 </head>
 
@@ -217,7 +204,7 @@ webview.active {
   <div id="home">
     <div class="center">
       <h2>NoTrace Browser</h2>
-      <input id="search">
+      <input id="search" placeholder="Search or enter URL">
       <button onclick="search()">Go</button>
     </div>
   </div>
@@ -248,9 +235,13 @@ function search() {
 function createTab(url = "") {
   const webview = document.createElement("webview");
 
-  if (url) webview.src = url;
-
+  // ALWAYS attach webview
   viewDiv.appendChild(webview);
+
+  // Set URL AFTER append
+  if (url) {
+    webview.src = url;
+  }
 
   tabs.push({ view: webview, title: "New Tab" });
   active = tabs.length - 1;
@@ -264,11 +255,11 @@ function createTab(url = "") {
     urlBar.value = e.url;
   });
 
-  if (url) hideHome();
   switchTab(active);
+  renderTabs();
 }
 
-/* SWITCH TAB */
+/* SWITCH */
 function switchTab(i) {
   active = i;
 
@@ -288,7 +279,7 @@ function switchTab(i) {
   renderTabs();
 }
 
-/* CLOSE TAB */
+/* CLOSE */
 function closeTab(i) {
   viewDiv.removeChild(tabs[i].view);
   tabs.splice(i, 1);
@@ -296,23 +287,27 @@ function closeTab(i) {
   if (tabs.length === 0) {
     active = -1;
     showHome();
+    renderTabs();
     return;
   }
 
   active = Math.max(0, i - 1);
   switchTab(active);
+  renderTabs();
 }
 
 /* RENDER */
 function renderTabs() {
+  tabsDiv.innerHTML = "";
 
+  // ONLY hide on first launch
   if (tabs.length === 0) {
-    tabsDiv.classList.add("hidden");
-  } else {
-    tabsDiv.classList.remove("hidden");
+    tabsDiv.style.display = "none";
+    return;
   }
 
-  tabsDiv.innerHTML = "";
+  // Always show after first tab exists
+  tabsDiv.style.display = "flex";
 
   tabs.forEach((t, i) => {
     const el = document.createElement("div");
@@ -341,10 +336,11 @@ function renderTabs() {
   const add = document.createElement("div");
   add.className = "tab";
   add.textContent = "+";
-  add.onclick = () => {
-    createTab("");
-    showHome();
-  };
+
+add.onclick = () => {
+  createTab("");   // ALWAYS creates a real tab
+  showHome();      // just overlays home
+};
 
   tabsDiv.appendChild(add);
 }
@@ -398,160 +394,6 @@ function maximize() {
 function closeApp() {
   ipcRenderer.send("close");
 }
-
-function renderTabs() {
-
-  if (tabs.length === 0) {
-    tabsDiv.classList.add("hidden");
-  } else {
-    tabsDiv.classList.remove("hidden");
-  }
-
-  tabsDiv.innerHTML = "";
-
-  tabs.forEach((t, i) => {
-    const el = document.createElement("div");
-    el.className = "tab " + (i === active ? "active" : "");
-
-    const title = document.createElement("span");
-    title.className = "title";
-    title.textContent = t.title;
-
-    const close = document.createElement("span");
-    close.className = "close";
-    close.textContent = "×";
-
-    close.onclick = (e) => {
-      e.stopPropagation();
-      closeTab(i);
-    };
-
-    el.appendChild(title);
-    el.appendChild(close);
-
-    el.onclick = () => switchTab(i);
-
-    tabsDiv.appendChild(el);
-  });
-
-  const add = document.createElement("div");
-  add.className = "tab";
-  add.textContent = "+";
-
-  add.onclick = () => {
-    createTab("");
-    showHome();
-  };
-
-  tabsDiv.appendChild(add);
-}
-
-function createTab(url = "") {
-  const webview = document.createElement("webview");
-
-  if (url) webview.src = url;
-
-  viewDiv.appendChild(webview);
-
-  tabs.push({ view: webview, title: "New Tab" });
-  active = tabs.length - 1;
-
-  webview.addEventListener("page-title-updated", e => {
-    tabs[active].title = e.title;
-    renderTabs();
-  });
-
-  webview.addEventListener("did-navigate", e => {
-    urlBar.value = e.url;
-  });
-
-  if (url) hideHome();
-
-  switchTab(active);
-  renderTabs();
-}
-
-function switchTab(i) {
-  active = i;
-
-  tabs.forEach((t, index) => {
-    t.view.classList.remove("active");
-
-    if (index === i) {
-      if (t.view.src) {
-        hideHome();
-        t.view.classList.add("active");
-      } else {
-        showHome();
-      }
-    }
-  });
-
-  renderTabs();
-}
-
-function closeTab(i) {
-  viewDiv.removeChild(tabs[i].view);
-  tabs.splice(i, 1);
-
-  if (tabs.length === 0) {
-    active = -1;
-    showHome();
-    renderTabs();
-    return;
-  }
-
-  active = Math.max(0, i - 1);
-  switchTab(active);
-  renderTabs();
-}
-
-function renderTabs() {
-
-  if (tabs.length === 0) {
-    tabsDiv.classList.add("hidden");
-  } else {
-    tabsDiv.classList.remove("hidden");
-  }
-
-  tabsDiv.innerHTML = "";
-
-  tabs.forEach((t, i) => {
-    const el = document.createElement("div");
-    el.className = "tab " + (i === active ? "active" : "");
-
-    const title = document.createElement("span");
-    title.className = "title";
-    title.textContent = t.title;
-
-    const close = document.createElement("span");
-    close.className = "close";
-    close.textContent = "×";
-
-    close.onclick = (e) => {
-      e.stopPropagation();
-      closeTab(i);
-    };
-
-    el.appendChild(title);
-    el.appendChild(close);
-    el.onclick = () => switchTab(i);
-
-    tabsDiv.appendChild(el);
-  });
-
-  const add = document.createElement("div");
-  add.className = "tab";
-  add.textContent = "+";
-
-  add.onclick = () => {
-    createTab("");
-    showHome();
-  };
-
-  tabsDiv.appendChild(add);
-}
-
 </script>
 
 </body>
