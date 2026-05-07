@@ -17,7 +17,11 @@
     "appId": "com.notrace.browser",
     "productName": "NoTrace Browser",
     "win": {
-      "target": "nsis"
-    }
-  }
+  "icon": "icon.ico",
+  "target": "nsis"
+},
+"nsis": {
+  "installerIcon": "icon.ico",
+  "uninstallerIcon": "icon.ico",
+  "installerHeaderIcon": "icon.ico"
 }
