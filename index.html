@@ -78,38 +78,28 @@ button, input {
 .tab {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 8px;
   padding: 5px 12px;
   min-width: 32px;
-  max-width: 180px;
+  max-width: 220px;
   height: 32px;
-
-  border: none;
   border-radius: 999px;
-
   background: #000000;
   color: #ffffff;
-
   font-size: 12px;
   cursor: pointer;
   overflow: hidden;
   user-select: none;
-
   box-sizing: border-box;
   box-shadow: 0 0 10px rgba(255,255,255,0.12);
 }
 
 .tab:hover {
-  background: #000000;
-  color: #ffffff;
   box-shadow: 0 0 14px rgba(255,255,255,0.22);
 }
 
 .tab.active {
-  background: #000000;
-  color: #ffffff;
-  box-shadow: 0 0 16px rgba(255,255,255,0.28);
+  box-shadow: 0 0 16px rgba(255,255,255,0.30);
 }
 
 .tab .title {
@@ -124,6 +114,13 @@ button, input {
   font-size: 14px;
   cursor: pointer;
   color: #ffffff;
+}
+
+.tab img {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 /* NAV */
@@ -141,10 +138,6 @@ button, input {
   background: #000000;
   color: #fff;
   cursor: pointer;
-}
-
-.top button:hover {
-  background: #000000;
 }
 
 .top input {
@@ -170,8 +163,7 @@ button, input {
 
 webview {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: none;
@@ -228,24 +220,11 @@ webview.active {
   width: 500px;
   padding: 14px 18px;
   border-radius: 999px;
-  border: none;
   background: #000000;
   color: #ffffff;
   outline: none;
   text-align: left;
   box-shadow: 0 0 14px rgba(255,255,255,0.12);
-}
-
-.search-row button {
-  padding: 12px 20px;
-  border-radius: 10px;
-  background: #000000;
-  color: #ffffff;
-  cursor: pointer;
-}
-
-.search-row button:hover {
-  background: #000000;
 }
 </style>
 </head>
@@ -274,14 +253,14 @@ webview.active {
   <div id="view"></div>
 
   <div id="home">
-  <div class="center">
-    <h2>NoTrace Browser</h2>
-
-    <div class="search-row">
-      <input id="search" placeholder="Search or enter URL">
+    <div class="center">
+      <h2>NoTrace Browser</h2>
+      <div class="search-row">
+        <input id="search" placeholder="Search or enter URL">
+      </div>
     </div>
-
   </div>
+
 </div>
 
 <script>
@@ -297,6 +276,9 @@ const searchBar = document.getElementById("search");
 function formatURL(value) {
   if (!value) return "";
 
+  value = value.trim();
+
+  /* Already full URL */
   if (
     value.startsWith("http://") ||
     value.startsWith("https://")
@@ -304,10 +286,21 @@ function formatURL(value) {
     return value;
   }
 
+  /* Direct website detection */
+  const websitePattern = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
+
+  if (websitePattern.test(value)) {
+    return "https://" + value;
+  }
+
+  /* Search query */
   return "https://duckduckgo.com/?q=" + encodeURIComponent(value);
 }
 
-/* HOME */
+function hideHome() {
+  home.classList.add("hidden");
+}
+
 function showHome() {
   home.classList.remove("hidden");
 
@@ -315,104 +308,136 @@ function showHome() {
     tab.view.classList.remove("active");
   });
 
-  /* Keep tabs visible if ANY tab exists */
-  if (tabs.length > 0) {
-    tabsDiv.style.display = "flex";
-  } else {
-    tabsDiv.style.display = "none";
-  }
+  tabsDiv.style.display = tabs.length > 0 ? "flex" : "none";
 
-  /* Clear BOTH search fields on every new blank tab */
   urlBar.value = "";
   searchBar.value = "";
 }
 
-/* SEARCH */
 function search() {
-  let value = searchBar.value.trim();
+  const value = searchBar.value.trim();
   if (!value) return;
 
   const finalURL = formatURL(value);
 
-  /* If current tab is blank, use it */
-  if (active !== -1 && tabs[active]) {
-    tabs[active].view.src = finalURL;
-    tabs[active].title = value;
-    tabs[active].loaded = true;
-
-    hideHome();
-
-    tabs.forEach(tab => {
-      tab.view.classList.remove("active");
-    });
-
-    tabs[active].view.classList.add("active");
-
-    urlBar.value = finalURL;
-
-    renderTabs();
-    return;
+  if (active !== -1 && tabs[active] && !tabs[active].loaded) {
+    loadTab(active, finalURL);
+  } else {
+    createTab(finalURL);
   }
+}
 
-  createTab(finalURL);
+function loadTab(index, url) {
+  const tab = tabs[index];
+  if (!tab) return;
+
+  tab.loading = true;
+  tab.loaded = true;
+  tab.title = "Loading...";
+  tab.view.src = url;
+
+  hideHome();
+
+  tabs.forEach(t => t.view.classList.remove("active"));
+  tab.view.classList.add("active");
+
+  urlBar.value = url;
+
+  renderTabs();
 }
 
 function createTab(url = "") {
   const webview = document.createElement("webview");
-
-  webview.style.position = "absolute";
-  webview.style.top = "0";
-  webview.style.left = "0";
-  webview.style.width = "100%";
-  webview.style.height = "100%";
-
   viewDiv.appendChild(webview);
 
   const tabData = {
     view: webview,
     title: "New Tab",
-    loaded: false
+    favicon: "",
+    loaded: false,
+    loading: false
   };
 
   tabs.push(tabData);
-  active = tabs.length - 1;
+  const tabIndex = tabs.length - 1;
+
+  webview.addEventListener("did-start-loading", () => {
+    tabData.loading = true;
+    if (webview.src) {
+      tabData.title = "Loading...";
+      tabData.loaded = true;
+    }
+    renderTabs();
+  });
 
   webview.addEventListener("page-title-updated", e => {
-    const index = tabs.findIndex(tab => tab.view === webview);
-
-    if (index !== -1) {
-      tabs[index].title = e.title || "New Tab";
+    if (e.title && e.title.trim()) {
+      tabData.title = e.title;
       renderTabs();
     }
   });
 
-  webview.addEventListener("did-navigate", e => {
-    const index = tabs.findIndex(tab => tab.view === webview);
+  webview.addEventListener("page-favicon-updated", e => {
+    if (e.favicons && e.favicons.length > 0) {
+      tabData.favicon = e.favicons[0];
+      renderTabs();
+    }
+  });
 
-    if (index !== -1) {
-      tabs[index].loaded = true;
-      tabs[index].title = webview.getTitle() || "New Tab";
+  webview.addEventListener("did-stop-loading", () => {
+    tabData.loading = false;
+    tabData.loaded = !!webview.getURL();
+
+    const title = webview.getTitle();
+    if (title && title.trim()) {
+      tabData.title = title;
     }
 
-    if (index === active) {
+    if (active === tabs.indexOf(tabData)) {
+      urlBar.value = webview.getURL();
+    }
+
+    renderTabs();
+  });
+
+  webview.addEventListener("did-finish-load", () => {
+    tabData.loading = false;
+    tabData.loaded = true;
+
+    const title = webview.getTitle();
+    if (title && title.trim()) {
+      tabData.title = title;
+    }
+
+    renderTabs();
+  });
+
+  webview.addEventListener("did-navigate", e => {
+    tabData.loaded = true;
+
+    if (active === tabs.indexOf(tabData)) {
       urlBar.value = e.url;
     }
 
     renderTabs();
   });
 
+  webview.addEventListener("did-navigate-in-page", e => {
+    if (active === tabs.indexOf(tabData)) {
+      urlBar.value = e.url;
+    }
+  });
+
+  active = tabIndex;
   tabsDiv.style.display = "flex";
 
   if (url) {
-    webview.src = url;
-    tabData.loaded = true;
-    hideHome();
+    loadTab(active, url);
   } else {
+    switchTab(active);
     showHome();
-    searchBar.value = "";
   }
 
-  switchTab(active);
   renderTabs();
 }
 
@@ -429,30 +454,28 @@ function switchTab(index) {
 
   if (!currentTab.loaded || !currentTab.view.src) {
     showHome();
-    searchBar.value = "";
-    urlBar.value = "";
   } else {
     hideHome();
     currentTab.view.classList.add("active");
-    urlBar.value = currentTab.view.src;
+    urlBar.value = currentTab.view.getURL() || currentTab.view.src;
   }
 
   renderTabs();
 }
 
-/* CLOSE TAB */
 function closeTab(index) {
   if (index < 0 || index >= tabs.length) return;
 
   const closingActive = index === active;
 
-  if (tabs[index].view && tabs[index].view.parentNode) {
-    tabs[index].view.parentNode.removeChild(tabs[index].view);
+  const tab = tabs[index];
+
+  if (tab.view.parentNode) {
+    tab.view.parentNode.removeChild(tab.view);
   }
 
   tabs.splice(index, 1);
 
-  /* No tabs left */
   if (tabs.length === 0) {
     active = -1;
     renderTabs();
@@ -460,28 +483,20 @@ function closeTab(index) {
     return;
   }
 
-  /* Fix active index */
   if (closingActive) {
-    if (index >= tabs.length) {
-      active = tabs.length - 1;
-    } else {
-      active = index;
-    }
+    active = index >= tabs.length ? tabs.length - 1 : index;
   } else if (index < active) {
     active--;
   }
 
   switchTab(active);
-  renderTabs();
 }
 
-/* RENDER TABS */
 function renderTabs() {
   tabsDiv.innerHTML = "";
 
   if (tabs.length === 0) {
     tabsDiv.style.display = "none";
-    showHome();
     return;
   }
 
@@ -491,9 +506,12 @@ function renderTabs() {
     const el = document.createElement("div");
     el.className = "tab" + (index === active ? " active" : "");
 
+    const icon = document.createElement("img");
+    icon.src = tab.favicon || "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><rect width='16' height='16' fill='white'/></svg>";
+
     const title = document.createElement("span");
     title.className = "title";
-    title.textContent = tab.title || "New Tab";
+    title.textContent = tab.loading ? "Loading..." : (tab.title || "New Tab");
 
     const close = document.createElement("span");
     close.className = "close";
@@ -508,13 +526,13 @@ function renderTabs() {
       switchTab(index);
     };
 
+    el.appendChild(icon);
     el.appendChild(title);
     el.appendChild(close);
 
     tabsDiv.appendChild(el);
   });
 
-  /* NEW TAB BUTTON */
   const add = document.createElement("div");
   add.className = "tab";
   add.innerHTML = '<span class="title">+</span>';
@@ -527,7 +545,6 @@ function renderTabs() {
   tabsDiv.appendChild(add);
 }
 
-/* NAV */
 function back() {
   if (active !== -1 && tabs[active]) {
     tabs[active].view.goBack();
@@ -540,34 +557,27 @@ function forward() {
   }
 }
 
-/* EVENTS */
 searchBar.addEventListener("keydown", e => {
-  if (e.key === "Enter") search();
+  if (e.key === "Enter") {
+    search();
+  }
 });
 
 urlBar.addEventListener("keydown", e => {
   if (e.key === "Enter") {
-    let value = urlBar.value.trim();
+    const value = urlBar.value.trim();
     if (!value) return;
 
-    value = formatURL(value);
+    const finalURL = formatURL(value);
 
-    /* If no active tab, create one */
     if (active === -1 || !tabs[active]) {
-      createTab(value);
-      return;
+      createTab(finalURL);
+    } else {
+      loadTab(active, finalURL);
     }
-
-    tabs[active].view.src = value;
-    tabs[active].title = "Loading...";
-    hideHome();
-    tabs[active].view.classList.add("active");
-
-    renderTabs();
   }
 });
 
-/* WINDOW */
 const { ipcRenderer } = require("electron");
 
 function minimize() {
@@ -582,7 +592,6 @@ function closeApp() {
   ipcRenderer.send("close");
 }
 
-/* FIRST LOAD */
 renderTabs();
 showHome();
 </script>
