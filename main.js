@@ -1,3 +1,4 @@
+const path = require("path");
 const { app, BrowserWindow } = require("electron");
 
 function createWindow() {
@@ -5,7 +6,8 @@ function createWindow() {
     width: 1200,
     height: 800,
     frame: false,
-    webPreferences: {
+    icon: path.join(__dirname, "assets/icon.ico"),    
+      webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
       webviewTag: true   // REQUIRED
