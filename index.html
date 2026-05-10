@@ -273,30 +273,26 @@ const home = document.getElementById("home");
 const urlBar = document.getElementById("url");
 const searchBar = document.getElementById("search");
 
+/* URL FORMAT */
 function formatURL(value) {
   if (!value) return "";
 
   value = value.trim();
 
-  /* Already full URL */
-  if (
-    value.startsWith("http://") ||
-    value.startsWith("https://")
-  ) {
+  if (value.startsWith("http://") || value.startsWith("https://")) {
     return value;
   }
 
-  /* Direct website detection */
   const websitePattern = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
 
   if (websitePattern.test(value)) {
     return "https://" + value;
   }
 
-  /* Search query */
   return "https://duckduckgo.com/?q=" + encodeURIComponent(value);
 }
 
+/* HOME */
 function hideHome() {
   home.classList.add("hidden");
 }
@@ -314,6 +310,7 @@ function showHome() {
   searchBar.value = "";
 }
 
+/* SEARCH */
 function search() {
   const value = searchBar.value.trim();
   if (!value) return;
@@ -327,6 +324,7 @@ function search() {
   }
 }
 
+/* LOAD TAB */
 function loadTab(index, url) {
   const tab = tabs[index];
   if (!tab) return;
@@ -346,6 +344,7 @@ function loadTab(index, url) {
   renderTabs();
 }
 
+/* CREATE TAB */
 function createTab(url = "") {
   const webview = document.createElement("webview");
   viewDiv.appendChild(webview);
@@ -363,16 +362,19 @@ function createTab(url = "") {
 
   webview.addEventListener("did-start-loading", () => {
     tabData.loading = true;
+
     if (webview.src) {
       tabData.title = "Loading...";
       tabData.loaded = true;
     }
+
     renderTabs();
   });
 
   webview.addEventListener("page-title-updated", e => {
     if (e.title && e.title.trim()) {
       tabData.title = e.title;
+      tabData.loading = false;
       renderTabs();
     }
   });
@@ -389,24 +391,13 @@ function createTab(url = "") {
     tabData.loaded = !!webview.getURL();
 
     const title = webview.getTitle();
+
     if (title && title.trim()) {
       tabData.title = title;
     }
 
     if (active === tabs.indexOf(tabData)) {
       urlBar.value = webview.getURL();
-    }
-
-    renderTabs();
-  });
-
-  webview.addEventListener("did-finish-load", () => {
-    tabData.loading = false;
-    tabData.loaded = true;
-
-    const title = webview.getTitle();
-    if (title && title.trim()) {
-      tabData.title = title;
     }
 
     renderTabs();
@@ -428,6 +419,8 @@ function createTab(url = "") {
     }
   });
 
+  webview.addEventListener("did-fail-load", e => {
+
   active = tabIndex;
   tabsDiv.style.display = "flex";
 
@@ -441,6 +434,7 @@ function createTab(url = "") {
   renderTabs();
 }
 
+/* SWITCH TAB */
 function switchTab(index) {
   if (index < 0 || index >= tabs.length) return;
 
@@ -463,11 +457,11 @@ function switchTab(index) {
   renderTabs();
 }
 
+/* CLOSE TAB */
 function closeTab(index) {
   if (index < 0 || index >= tabs.length) return;
 
   const closingActive = index === active;
-
   const tab = tabs[index];
 
   if (tab.view.parentNode) {
@@ -492,6 +486,7 @@ function closeTab(index) {
   switchTab(active);
 }
 
+/* RENDER TABS */
 function renderTabs() {
   tabsDiv.innerHTML = "";
 
@@ -545,6 +540,7 @@ function renderTabs() {
   tabsDiv.appendChild(add);
 }
 
+/* NAV */
 function back() {
   if (active !== -1 && tabs[active]) {
     tabs[active].view.goBack();
@@ -557,6 +553,7 @@ function forward() {
   }
 }
 
+/* EVENTS */
 searchBar.addEventListener("keydown", e => {
   if (e.key === "Enter") {
     search();
@@ -578,6 +575,7 @@ urlBar.addEventListener("keydown", e => {
   }
 });
 
+/* WINDOW */
 const { ipcRenderer } = require("electron");
 
 function minimize() {
@@ -592,6 +590,7 @@ function closeApp() {
   ipcRenderer.send("close");
 }
 
+/* FIRST LOAD */
 renderTabs();
 showHome();
 </script>
