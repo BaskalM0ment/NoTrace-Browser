@@ -1,9 +1,9 @@
 {
   "name": "notrace-browser",
   "version": "1.0.0",
-  "description": "NoTrace Browser",
+  "description": "A lightweight Electron browser with DuckDuckGo search, tabs, and a minimal interface.",
   "main": "main.js",
-  "author": "",
+  "author": "BaskalM0ment",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
@@ -16,12 +16,20 @@
   "build": {
     "appId": "com.notrace.browser",
     "productName": "NoTrace Browser",
+    "files": [
+      "index.html",
+      "main.js",
+      "icon.ico",
+      "package.json"
+    ],
     "win": {
-  "icon": "icon.ico",
-  "target": "nsis"
-},
-"nsis": {
-  "installerIcon": "icon.ico",
-  "uninstallerIcon": "icon.ico",
-  "installerHeaderIcon": "icon.ico"
+      "icon": "icon.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico"
+    }
+  }
 }
