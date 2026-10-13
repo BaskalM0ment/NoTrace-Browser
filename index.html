@@ -38,16 +38,12 @@ body {
   -webkit-app-region: no-drag;
 }
 
-.dot {
-  width: 24px;
-  height: 28px;
+.window-control {
+  width: 36px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: Arial, sans-serif;
-  font-size: 24px;
-  font-weight: 400;
-  line-height: 1;
   color: #ffffff;
   background: transparent !important;
   border: none !important;
@@ -56,20 +52,27 @@ body {
   cursor: pointer;
   box-sizing: border-box;
   user-select: none;
+  padding: 0;
 }
 
-.dot:hover {
+.window-control:hover {
   background: transparent !important;
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
-.dot:active {
-  opacity: 0.45;
+.window-control:active {
+  opacity: 0.5;
 }
 
-.red, .yellow, .green {
-  background: transparent !important;
-  color: #ffffff;
+.window-control svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
 }
 
 button, input {
@@ -254,9 +257,15 @@ webview.active {
 
 <div class="titlebar">
   <div class="window-controls">
-    <div class="dot yellow" title="Minimize" onclick="minimize()">&#x2212;</div>
-    <div class="dot green" title="Maximize / Restore" onclick="maximize()">&#x25A1;</div>
-    <div class="dot red" title="Close" onclick="closeApp()">&#x00D7;</div>
+    <button class="window-control" title="Minimize" aria-label="Minimize" onclick="minimize()">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8H14"/></svg>
+    </button>
+    <button class="window-control" title="Restore" aria-label="Restore" onclick="maximize()">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="2.5" width="8.5" height="8.5"/><path d="M3 5.5V13H10.5"/></svg>
+    </button>
+    <button class="window-control" title="Close" aria-label="Close" onclick="closeApp()">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3L13 13M13 3L3 13"/></svg>
+    </button>
   </div>
 </div>
 
