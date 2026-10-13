@@ -420,6 +420,10 @@ function createTab(url = "") {
   });
 
   webview.addEventListener("did-fail-load", e => {
+    tabData.loading = false;
+    tabData.title = "Unable to load page";
+    renderTabs();
+  });
 
   active = tabIndex;
   tabsDiv.style.display = "flex";
